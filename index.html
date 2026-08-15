@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search Performance Signals for Content Prioritization — Capstone Paper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EFEDE6;
+    --paper-raise:#F7F5EF;
+    --ink:#14171C;
+    --ink-soft:#4B5058;
+    --rule:#C8C3B4;
+    --teal:#146B64;
+    --teal-soft:#DDEBE9;
+    --amber:#B9791F;
+    --amber-soft:#F2E4C8;
+    --navy:#26314A;
+    --max:780px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation:none !important; transition:none !important;}
+  }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.65;
+    font-size:17px;
+  }
+  a{color:var(--teal); text-decoration-thickness:1px;}
+  a:focus-visible, button:focus-visible{
+    outline:2px solid var(--teal);
+    outline-offset:3px;
+  }
+  .wrap{max-width:var(--max); margin:0 auto; padding:0 24px;}
+
+  /* ---- top nav ---- */
+  .topnav{
+    position:sticky; top:0; z-index:10;
+    background:rgba(239,237,230,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--rule);
+  }
+  .topnav-inner{
+    max-width:var(--max); margin:0 auto; padding:12px 24px;
+    display:flex; gap:18px; overflow-x:auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px; letter-spacing:.02em;
+  }
+  .topnav-inner a{
+    color:var(--ink-soft); white-space:nowrap; text-decoration:none;
+    padding:4px 2px; border-bottom:2px solid transparent;
+  }
+  .topnav-inner a:hover{color:var(--ink); border-bottom-color:var(--amber);}
+
+  /* ---- hero ---- */
+  header.hero{padding:64px 0 40px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px; text-transform:uppercase; letter-spacing:.12em;
+    color:var(--teal); margin:0 0 18px;
+  }
+  h1{
+    font-family:'Newsreader', serif;
+    font-weight:500;
+    font-size:clamp(30px, 4.4vw, 44px);
+    line-height:1.15;
+    margin:0 0 22px;
+    color:var(--ink);
+  }
+  .byline{
+    font-size:14.5px; color:var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+    margin-bottom:34px;
+  }
+  .abstract{
+    background:var(--paper-raise);
+    border:1px solid var(--rule);
+    border-left:3px solid var(--teal);
+    padding:22px 26px;
+    font-size:16px;
+    color:var(--ink);
+  }
+  .abstract p{margin:0 0 14px;}
+  .abstract p:last-child{margin-bottom:0;}
+
+  /* ---- signal readout (signature element) ---- */
+  .readout{
+    margin-top:34px;
+    border:1px solid var(--rule);
+    background:var(--paper-raise);
+    padding:26px 26px 22px;
+  }
+  .readout-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--ink-soft); margin-bottom:16px;
+  }
+  .bar-row{display:flex; align-items:center; gap:14px; margin-bottom:14px;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-tag{
+    width:118px; flex-shrink:0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px; color:var(--ink-soft);
+  }
+  .bar-track{flex:1; background:#E3DFD2; height:26px; position:relative;}
+  .bar-fill{height:100%; position:relative;}
+  .bar-fill.base{background:var(--ink-soft); opacity:.55;}
+  .bar-fill.model{background:var(--teal);}
+  .bar-val{
+    position:absolute; right:-56px; top:50%; transform:translateY(-50%);
+    font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--ink);
+    width:52px;
+  }
+  .readout-note{
+    margin-top:20px; font-size:13.5px; color:var(--ink-soft);
+    padding-top:14px; border-top:1px dashed var(--rule);
+  }
+
+  /* ---- sections ---- */
+  main{padding-bottom:40px;}
+  section{padding:52px 0; border-top:1px solid var(--rule);}
+  .num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px; color:var(--amber); letter-spacing:.06em;
+    margin-bottom:10px;
+  }
+  h2{
+    font-family:'Newsreader', serif;
+    font-weight:500; font-size:clamp(24px,3vw,30px);
+    margin:0 0 22px; color:var(--ink);
+  }
+  h3{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600; font-size:16.5px;
+    margin:30px 0 12px; color:var(--navy);
+  }
+  p{margin:0 0 16px;}
+  ul,ol{margin:0 0 16px; padding-left:22px;}
+  li{margin-bottom:6px;}
+  code{
+    font-family:'IBM Plex Mono', monospace;
+    background:#E3DFD2; padding:1.5px 5px; font-size:.9em;
+  }
+  .callout{
+    background:var(--amber-soft);
+    border-left:3px solid var(--amber);
+    padding:14px 18px; font-size:15px; margin:20px 0;
+  }
+  .callout.good{background:var(--teal-soft); border-left-color:var(--teal);}
+
+  /* ---- tables ---- */
+  table{width:100%; border-collapse:collapse; margin:18px 0 22px; font-size:15px;}
+  th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--rule);}
+  th{
+    font-family:'IBM Plex Mono', monospace; font-size:12px;
+    text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);
+    border-bottom:1px solid var(--ink);
+  }
+  td.num-cell{font-family:'IBM Plex Mono', monospace;}
+
+  /* ---- charts ---- */
+  .chart-block{margin:22px 0 8px;}
+  .chart-caption{font-size:13px; color:var(--ink-soft); margin-top:8px;}
+  svg{width:100%; height:auto; display:block;}
+  .axis-label{font-family:'IBM Plex Mono', monospace; font-size:11px; fill:var(--ink-soft);}
+  .val-label{font-family:'IBM Plex Mono', monospace; font-size:12px; fill:var(--ink);}
+
+  /* ---- recommendations donut layout ---- */
+  .rec-flex{display:flex; gap:36px; align-items:center; flex-wrap:wrap; margin:22px 0;}
+  .rec-legend{flex:1; min-width:220px;}
+  .legend-row{display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:14.5px;}
+  .swatch{width:12px; height:12px; flex-shrink:0;}
+  .donut-wrap{width:200px; flex-shrink:0;}
+
+  /* ---- footer ---- */
+  footer{
+    padding:40px 0 60px; border-top:1px solid var(--rule);
+    font-size:14px; color:var(--ink-soft);
+  }
+  footer a{color:var(--teal);}
+
+  @media (max-width:600px){
+    header.hero{padding:44px 0 30px;}
+    section{padding:38px 0;}
+    .bar-tag{width:88px; font-size:11.5px;}
+    .bar-val{right:-46px; width:44px; font-size:12px;}
+    .rec-flex{flex-direction:column; align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="#introduction">01 Introduction</a>
+    <a href="#data">02 Data</a>
+    <a href="#methodology">03 Methodology</a>
+    <a href="#results">04 Results</a>
+    <a href="#limitations">05 Limitations</a>
+    <a href="#recommendations">06 Recommendations</a>
+    <a href="#reproducibility">07 Reproducibility</a>
+    <a href="#acknowledgments">08 Acknowledgments</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Search Intelligence Capstone — CTR / Engagement Opportunity Scoring</p>
+    <h1>Search Performance Signals for Content Prioritization Using a Decision Tree Model</h1>
+    <p class="byline">FlyRank ML Internship Dataset · March 2026 release · Decision-support research</p>
+
+    <div class="abstract">
+      <p>This study investigates whether search performance signals can be used to identify content pages that should be reviewed first.</p>
+      <p>A Decision Tree classifier was trained on search performance metrics from the FlyRank ML Internship dataset and compared against a simple rule-based baseline, evaluated on the same held-out split. The review-candidate label is defined <strong>relative to the sample</strong> (bottom quartile of CTR among pages that actually received search impressions), rather than against a fixed universal CTR benchmark — see Section 3.1.</p>
+      <p>The Decision Tree achieved an accuracy of <strong>71.01%</strong> (macro-F1 <strong>0.6044</strong>) on the held-out split, compared with <strong>52.26%</strong> (macro-F1 <strong>0.4526</strong>) for the rule-based baseline evaluated on the same split. A grouped-by-page validation split and 5-fold cross-validation both gave consistent results.</p>
+      <p>The model is intended for decision-support only and should be combined with human review before any content action is taken.</p>
+    </div>
+
+    <div class="readout">
+      <p class="readout-label">Model vs. baseline — same held-out split</p>
+      <div class="bar-row">
+        <span class="bar-tag">Baseline acc.</span>
+        <div class="bar-track"><div class="bar-fill base" style="width:52.26%"><span class="bar-val">52.3%</span></div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-tag">Model acc.</span>
+        <div class="bar-track"><div class="bar-fill model" style="width:71.01%"><span class="bar-val">71.0%</span></div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-tag">Baseline F1</span>
+        <div class="bar-track"><div class="bar-fill base" style="width:45.26%"><span class="bar-val">0.453</span></div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-tag">Model F1</span>
+        <div class="bar-track"><div class="bar-fill model" style="width:60.44%"><span class="bar-val">0.604</span></div></div>
+      </div>
+      <p class="readout-note">Macro-F1 (not accuracy alone) is the honest read here — the label is imbalanced, so accuracy can overstate performance on its own.</p>
+    </div>
+  </header>
+
+  <main>
+
+    <section id="introduction">
+      <p class="num">01</p>
+      <h2>Introduction</h2>
+      <p>Content teams often manage thousands of pages and cannot manually review every one of them.</p>
+      <p>Search performance metrics — such as average search position, pageviews, and scroll behavior — provide signals that may help prioritize which pages deserve attention first.</p>
+      <p>This project investigates whether those signals can be used to identify pages that should be reviewed before others.</p>
+      <p>The goal is not to automate content decisions but to support human reviewers with a ranked, interpretable recommendation list.</p>
+    </section>
+
+    <section id="data">
+      <p class="num">02</p>
+      <h2>Data</h2>
+      <p>This project uses the FlyRank ML Internship dataset, drawn from the <code>fact_content_daily_performance</code> table of the March 2026 (<code>month=2026-03</code>) warehouse release, accessed via DuckDB over the hosted Hugging Face warehouse.</p>
+
+      <h3>Date window &amp; sampling</h3>
+      <p>The March 2026 partition of the warehouse. 100,000 rows were sampled from this partition. Two row-level filters were then applied before modeling: <code>gsc_data_available == True</code> (the row must have real measured GSC data for that day, not just belong to a client whose account is connected) and <code>gsc_impressions &gt; 0</code> (the page must have actually appeared in search results). After both filters, <strong>39,751 rows (39.8%)</strong> remained for modeling.</p>
+
+      <h3>Selected features</h3>
+      <ul>
+        <li><code>gsc_avg_position</code> — average search ranking position</li>
+        <li><code>ga4_pageviews</code> — pageviews from analytics</li>
+        <li><code>ga4_sessions</code> — sessions from analytics</li>
+        <li><code>sessions_organic</code> — organic-search sessions</li>
+        <li><code>scroll_events</code> — scroll-depth engagement events</li>
+      </ul>
+
+      <h3>Target label source</h3>
+      <p>CTR is computed from <code>gsc_clicks</code> / <code>gsc_impressions</code>, restricted to the filtered rows above. CTR itself is not used as a model feature, only to build the label.</p>
+
+      <div class="callout">
+        A notable finding surfaced directly from the data: <strong>85.71% of visible pages (impressions &gt; 0) received exactly zero clicks.</strong> This is reported here plainly because it shaped the labeling approach in Section 3.1 — a fixed universal CTR threshold (e.g. "CTR &lt; 5%") would have flagged nearly every page in this sample and produced a meaningless, degenerate label.
+      </div>
+
+      <h3>Exclusions and why</h3>
+      <ul>
+        <li>Client names, domains, page URLs, and private search queries are excluded from this paper and the underlying notebooks, to keep the work public-safe.</li>
+        <li>Rows without real GSC data for that day, and rows with zero search impressions, are excluded from modeling rather than zero-filled — treating "no data" as "zero performance" would silently mislabel untracked pages.</li>
+        <li>Within the remaining rows, missing values in the selected features are filled with zero — a page can genuinely have zero pageviews or scroll events and still be a valid, in-scope row.</li>
+      </ul>
+    </section>
+
+    <section id="methodology">
+      <p class="num">03</p>
+      <h2>Methodology</h2>
+
+      <h3>3.1 — Target label construction</h3>
+      <p>The review-candidate label flags the <strong>bottom quartile of CTR within the filtered sample</strong> — a relative, dataset-driven cutoff — rather than a fixed universal benchmark. An earlier fixed 5% cutoff was tried first and rejected: it flagged ~99% of the sample, which doesn't separate anything, it just describes the dataset. Because the zero-CTR tie group (85.71%) is itself larger than the 25% target, the flagged share came out larger than 25% by construction — the full tie group at the cutoff is included rather than arbitrarily split.</p>
+      <table>
+        <tr><th>Label</th><th>Meaning</th><th>Rows</th><th>Share</th></tr>
+        <tr><td>1</td><td>Review candidate (bottom-quartile CTR)</td><td class="num-cell">34,070</td><td class="num-cell">85.71%</td></tr>
+        <tr><td>0</td><td>Not flagged</td><td class="num-cell">5,681</td><td class="num-cell">14.29%</td></tr>
+      </table>
+
+      <h3>3.2 — Baseline vs. Decision Tree</h3>
+      <p>The baseline is a single rule on <code>gsc_avg_position</code> alone (pages positioned worse than the sample median — 7.10 — are flagged). The Decision Tree (max depth 6, <code>class_weight="balanced"</code>) uses all five features jointly. Both are scored on an identical 80/20 held-out split, stratified by label.</p>
+
+      <h3>3.3 — Grouped validation split</h3>
+      <p>A single random split can overstate performance if the same page appears in both train and test. This was re-checked with a split grouped by <code>content_hash_id</code> (38,797 unique pages), so all rows for a given page land entirely in train or entirely in test. The grouped-split result (75.65% accuracy, 0.6279 macro-F1) was close to the random-split result, indicating the random split was not meaningfully inflated by same-page leakage.</p>
+
+      <h3>3.3b — Cross-validated stability check</h3>
+      <p>Because the smaller class is still a minority even after filtering, a single split can be noisy. 5-fold stratified cross-validation gave a macro-F1 of <strong>0.5988 ± 0.0152</strong> — consistent with, and about as stable as, the single-split estimate.</p>
+
+      <h3>3.4 — Leakage audit</h3>
+      <p>The CTR column (and its source clicks/impressions columns) were confirmed absent from the feature set. Correlations between each feature and the label were checked for any suspiciously high (&gt;0.95) value that would suggest near-restatement of the target — none were found; the strongest was <code>ga4_sessions</code> at −0.29.</p>
+    </section>
+
+    <section id="results">
+      <p class="num">04</p>
+      <h2>Results</h2>
+      <p>The Decision Tree achieved an accuracy of <strong>71.01%</strong> (macro-F1 <strong>0.6044</strong>) on the random-split test set, compared with an accuracy of <strong>52.26%</strong> (macro-F1 <strong>0.4526</strong>) for the rule-based baseline on the same split. Across 5-fold stratified cross-validation, the Decision Tree's macro-F1 was <strong>0.5988 ± 0.0152</strong>. Under the grouped validation split, the Decision Tree achieved <strong>75.65%</strong> accuracy / <strong>0.6279</strong> macro-F1.</p>
+
+      <div class="callout good">
+        The Decision Tree's macro-F1 (0.60) is meaningfully above the baseline's (0.45) and stable across cross-validation folds — the model is genuinely separating the two classes rather than just predicting the majority. But a macro-F1 of ~0.60 is still modest: this is decision-support evidence, not a precise or highly confident classifier.
+      </div>
+
+      <div class="chart-block">
+        <svg viewBox="0 0 640 220" role="img" aria-label="Bar chart comparing baseline and Decision Tree across four validation settings">
+          <!-- baseline vs model, accuracy + macro-F1, random + grouped -->
+          <!-- bars -->
+          <g font-family="IBM Plex Mono">
+            <!-- Random split accuracy -->
+            <rect x="40"  y="10" width="46" height="0" />
+            <rect x="40"  y="150" width="46" height="52.26" fill="#4B5058" opacity=".55"/>
+            <rect x="94"  y="130.99" width="46" height="71.01" fill="#146B64"/>
+            <!-- Random split macro-F1 -->
+            <rect x="170" y="157.4" width="46" height="45.26" fill="#4B5058" opacity=".55"/>
+            <rect x="224" y="141.56" width="46" height="60.44" fill="#146B64"/>
+            <!-- Grouped accuracy -->
+            <rect x="330" y="149.7" width="46" height="52.79" fill="#4B5058" opacity=".55"/>
+            <rect x="384" y="126.85" width="46" height="75.65" fill="#146B64"/>
+            <!-- Grouped macro-F1 -->
+            <rect x="460" y="154.7" width="46" height="47.5"  fill="#4B5058" opacity=".55" style="visibility:hidden"/>
+            <rect x="460" y="140.7" width="46" height="62.79" fill="#146B64"/>
+
+            <!-- baseline for axis -->
+            <line x1="30" y1="202.5" x2="620" y2="202.5" stroke="#C8C3B4"/>
+
+            <!-- value labels -->
+            <text x="63"  y="145" text-anchor="middle" class="val-label">52.3%</text>
+            <text x="117" y="126" text-anchor="middle" class="val-label">71.0%</text>
+            <text x="193" y="152" text-anchor="middle" class="val-label">.453</text>
+            <text x="247" y="137" text-anchor="middle" class="val-label">.604</text>
+            <text x="353" y="145" text-anchor="middle" class="val-label">52.8%</text>
+            <text x="407" y="122" text-anchor="middle" class="val-label">75.6%</text>
+            <text x="483" y="136" text-anchor="middle" class="val-label">.628</text>
+
+            <!-- group labels -->
+            <text x="117" y="216" text-anchor="middle" class="axis-label">Random — Acc.</text>
+            <text x="247" y="216" text-anchor="middle" class="axis-label">Random — F1</text>
+            <text x="407" y="216" text-anchor="middle" class="axis-label">Grouped — Acc.</text>
+            <text x="483" y="216" text-anchor="middle" class="axis-label" style="display:none">Grouped — F1</text>
+          </g>
+        </svg>
+        <p class="chart-caption">Grey = baseline, teal = Decision Tree. Grouped macro-F1 (0.628) is annotated on the grouped-accuracy pair above for space.</p>
+      </div>
+
+      <h3>Feature importance</h3>
+      <div class="chart-block">
+        <svg viewBox="0 0 640 190" role="img" aria-label="Horizontal bar chart of Decision Tree feature importance">
+          <g font-family="IBM Plex Mono" font-size="12" fill="#14171C">
+            <text x="0" y="18" class="axis-label">sessions_organic</text>
+            <rect x="150" y="6" width="343" height="16" fill="#146B64"/>
+            <text x="500" y="18" class="val-label">0.586</text>
+
+            <text x="0" y="48" class="axis-label">gsc_avg_position</text>
+            <rect x="150" y="36" width="223" height="16" fill="#146B64"/>
+            <text x="380" y="48" class="val-label">0.381</text>
+
+            <text x="0" y="78" class="axis-label">ga4_pageviews</text>
+            <rect x="150" y="66" width="15" height="16" fill="#146B64"/>
+            <text x="172" y="78" class="val-label">0.026</text>
+
+            <text x="0" y="108" class="axis-label">ga4_sessions</text>
+            <rect x="150" y="96" width="5" height="16" fill="#146B64"/>
+            <text x="162" y="108" class="val-label">0.008</text>
+
+            <text x="0" y="138" class="axis-label">scroll_events</text>
+            <rect x="150" y="126" width="1" height="16" fill="#146B64"/>
+            <text x="158" y="138" class="val-label">0.000</text>
+          </g>
+        </svg>
+        <p class="chart-caption"><code>sessions_organic</code> and <code>gsc_avg_position</code> drive nearly all of the tree's decisions; the other three features contribute marginally.</p>
+      </div>
+    </section>
+
+    <section id="limitations">
+      <p class="num">05</p>
+      <h2>Limitations &amp; honest framing</h2>
+      <ul>
+        <li><strong>Decision-support only.</strong> This model is not intended to trigger automated content changes.</li>
+        <li><strong>Single-month dataset.</strong> The March 2026 release captures one point in time; no seasonality is modeled.</li>
+        <li><strong>Relative, not absolute.</strong> The label is defined against this sample's own CTR distribution, not a universal CTR benchmark — the finding is about relative under-performance within this dataset.</li>
+        <li><strong>Observational, not causal.</strong> Associations between features and the label do not establish that changing a feature would change CTR.</li>
+        <li><strong>No business context.</strong> The model has no information on recent edits, business priority, or campaign timing.</li>
+        <li><strong>Modest separation.</strong> A macro-F1 of ~0.60 is a real, stable improvement over the baseline, not a strong or highly confident classifier — human review remains required.</li>
+      </ul>
+    </section>
+
+    <section id="recommendations">
+      <p class="num">06</p>
+      <h2>Ranked recommendations</h2>
+      <p>Recommendations are computed for every GSC-available, visible page in the filtered sample using rules on the real feature and label values — not an illustrative mock-up.</p>
+
+      <div class="rec-flex">
+        <div class="donut-wrap">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Donut chart of recommendation priority categories">
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#E3DFD2" stroke-width="28"/>
+            <!-- circumference = 2*pi*70 = 439.8 -->
+            <!-- P1 4.06% = 17.86 -->
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#B9791F" stroke-width="28"
+              stroke-dasharray="17.86 421.94" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
+            <!-- P2 40.81% = 179.5, offset -17.86 -->
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#146B64" stroke-width="28"
+              stroke-dasharray="179.5 260.3" stroke-dashoffset="-17.86" transform="rotate(-90 100 100)"/>
+            <!-- P3 55.13% = 242.4, offset -197.36 -->
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#4B5058" stroke-width="28" opacity=".45"
+              stroke-dasharray="242.4 197.4" stroke-dashoffset="-197.36" transform="rotate(-90 100 100)"/>
+            <text x="100" y="96" text-anchor="middle" font-family="IBM Plex Mono" font-size="22" fill="#14171C">39,751</text>
+            <text x="100" y="114" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#4B5058">pages scored</text>
+          </svg>
+        </div>
+        <div class="rec-legend">
+          <div class="legend-row"><span class="swatch" style="background:#B9791F"></span> Priority 1 — Improve CTR (4.06% · 1,613 pages)</div>
+          <div class="legend-row"><span class="swatch" style="background:#146B64"></span> Priority 2 — Improve Ranking (40.81% · 16,223 pages)</div>
+          <div class="legend-row"><span class="swatch" style="background:#4B5058;opacity:.6"></span> Priority 3 — Monitor (55.13% · 21,915 pages)</div>
+        </div>
+      </div>
+
+      <table>
+        <tr><th>Priority</th><th>Reason code</th><th>Action</th><th>Rule</th></tr>
+        <tr>
+          <td>1</td><td>LOW_CTR_HIGH_IMPRESSIONS</td><td>Improve CTR</td>
+          <td>Bottom-quartile CTR <em>and</em> top-quartile pageviews — visible pages under-capturing clicks</td>
+        </tr>
+        <tr>
+          <td>2</td><td>HIGH_POSITION</td><td>Improve Ranking</td>
+          <td>Bottom-quartile CTR <em>and</em> below-median search position, not already Priority 1</td>
+        </tr>
+        <tr>
+          <td>3</td><td>LOW_PRIORITY</td><td>Monitor</td>
+          <td>Everything else</td>
+        </tr>
+      </table>
+
+      <p><strong>Intended use:</strong> this ranked list is a starting queue for a content specialist's review, not an automated action list. Every recommendation should be reviewed by a human before any change is made — the model has no context on business priorities, recent edits, or seasonality.</p>
+    </section>
+
+    <section id="reproducibility">
+      <p class="num">07</p>
+      <h2>Reproducibility</h2>
+      <p>All modeling steps in this paper — the filters, the label definition, the baseline, the Decision Tree, the grouped split, the cross-validation, and the recommendation rules — are implemented and executed in the capstone notebook, not narrated separately from the code.</p>
+      <ul>
+        <li>Capstone notebook: <a href="https://github.com/Shaimaa307/flyrank-ml-internship/blob/main/work/capstone_final.ipynb">work/capstone_final.ipynb</a></li>
+        <li>Weekly assignment notebooks: <a href="https://github.com/Shaimaa307/flyrank-ml-internship/tree/main/work">work/</a></li>
+        <li>Full repository: <a href="https://github.com/Shaimaa307/flyrank-ml-internship">github.com/Shaimaa307/flyrank-ml-internship</a></li>
+      </ul>
+      <p>Update the links above to match your repository's actual paths before publishing.</p>
+    </section>
+
+    <section id="acknowledgments">
+      <p class="num">08</p>
+      <h2>Acknowledgments &amp; data credit</h2>
+      <p>Built on the <a href="https://flyrank.ai" target="_blank" rel="noopener">FlyRank ML Internship dataset</a>.</p>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Search Intelligence Capstone — CTR / Engagement Opportunity Scoring lane. Public-safe: no client names, domains, URLs, private queries, credentials, or raw exports are included in this paper.</p>
+  </footer>
+</div>
+
+</body>
+</html>
